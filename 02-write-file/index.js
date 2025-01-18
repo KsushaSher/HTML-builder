@@ -5,15 +5,14 @@ const pathName = path.join(__dirname, 'text.txt');
 const output = fs.createWriteStream(pathName);
 stdout.write('Please, enter text:\n');
 
-const farewellMessage = () => {
-  stdout.write('You went out.');
-  exit();
-};
-
 stdin.on('data', (data) => {
   if (data.toString().trim() === 'exit') {
-    farewellMessage();
+    stdout.write('You went out.\n');
+    exit();
   }
   output.write(data);
 });
-process.on('SIGINT', farewellMessage);
+process.on('SIGINT', () => {
+  stdout.write('\nYou went out.\n');
+  exit();
+});
