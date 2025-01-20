@@ -2,28 +2,25 @@ const fsPromises = require('fs').promises;
 const path = require('path');
 const pathToFolder = path.join(__dirname, 'secret-folder');
 
-fsPromises
-  .readdir(pathToFolder, { withFileTypes: true })
-  .then((results) => {
-    results.forEach((result) => {
-      if (result.isFile()) {
-        const filePath = path.join(pathToFolder, result.name);
-        const fileName = path.basename(result.name, path.extname(result.name));
-        const fileExt = path.extname(result.name).slice(1);
-
-        fsPromises
-          .stat(filePath)
-          .then((stats) => {
-            console.log(
-              `${fileName} - ${fileExt} - ${(stats.size / 1024).toFixed(3)}kb`,
-            );
-          })
-          .catch((err) => {
-            console.error(`Failed to get file information: ${err.message}`);
-          });
-      }
+async function displayInformation() {
+  try {
+    const files = await fsPromises.readdir(pathToFolder, {
+      withFileTypes: true,
     });
-  })
-  .catch((err) => {
+    for (const file of files) {
+      if (file.isFile()) {
+        const filePath = path.join(pathToFolder, file.name);
+        const fileName = path.basename(file.name, path.extname(file.name));
+        const fileExt = path.extname(file.name).slice(1);
+        const stats = await fsPromises.stat(filePath);
+        console.log(
+          `${fileName} - ${fileExt} - ${(stats.size / 1024).toFixed(3)}kb`,
+        );
+      }
+    }
+  } catch (err) {
     console.error(`Failed to read folder contents: ${err.message}`);
-  });
+  }
+}
+
+displayInformation();
