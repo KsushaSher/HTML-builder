@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const fsPromises = fs.promises;
 const pathToDistFolder = path.join(__dirname, 'project-dist');
+const pathToComponentsFolder = path.join(__dirname, 'components');
 const pathToStylesFolder = path.join(__dirname, 'styles');
 
 async function folderExists(folderPath) {
@@ -77,7 +78,6 @@ async function copyAssetsFolder() {
         await copyDirectoryContent(sourceFile, newFolderPath);
       }
     }
-    console.log('Folder assets copied successfully!');
   } catch (err) {
     console.error(`Failed to copy assets folder: ${err.message}`);
   }
@@ -103,10 +103,41 @@ async function copyDirectoryContent(sourceDir, targetDir) {
   }
 }
 
+async function replaceTemplateTags() {
+  try {
+    const templateContent = await fsPromises.readFile(
+      path.join(__dirname, 'template.html'),
+      'utf-8',
+    );
+    const componentFiles = await fsPromises.readdir(pathToComponentsFolder);
+    let newTemplate = templateContent;
+
+    for (const file of componentFiles) {
+      const componentExt = path.extname(file);
+      if (componentExt === '.html') {
+        const componentName = path.basename(file, componentExt);
+        const fileContents = await fsPromises.readFile(
+          path.join(pathToComponentsFolder, file),
+          'utf-8',
+        );
+        const regexp = new RegExp(`{{${componentName}}}`, 'g');
+        newTemplate = newTemplate.replace(regexp, fileContents);
+      }
+    }
+
+    await fsPromises.writeFile(
+      path.join(path.join(__dirname, 'project-dist'), 'index.html'),
+      newTemplate,
+    );
+  } catch (err) {
+    console.error(`Failed to replace tags: ${err.message}`);
+  }
+}
+
 async function main() {
   await deleteFolder();
   await getBundleCss();
   await copyAssetsFolder();
+  await replaceTemplateTags();
 }
-
 main();
