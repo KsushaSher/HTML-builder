@@ -7,6 +7,7 @@ const pathToStylesFolder = path.join(__dirname, 'styles');
 
 async function getBundleCss() {
   try {
+    await fsPromises.mkdir(pathToBundleFolder, { recursive: true });
     const filesInStyles = await fsPromises.readdir(pathToStylesFolder, {
       withFileTypes: true,
     });
@@ -21,9 +22,14 @@ async function getBundleCss() {
 
       if (fileExt === '.css') {
         const input = fs.createReadStream(pathToFile, 'utf-8');
-        input.pipe(output, { end: false });
+        await new Promise((resolve, reject) => {
+          input.pipe(output, { end: false });
+          input.on('end', resolve);
+          input.on('error', reject);
+        });
       }
     }
+    output.end();
   } catch (err) {
     console.error(`Failed to create bundle: ${err.message}`);
   }
